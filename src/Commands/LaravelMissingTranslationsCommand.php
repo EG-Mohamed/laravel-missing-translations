@@ -20,6 +20,7 @@ class LaravelMissingTranslationsCommand extends Command
 
         if (empty($locales)) {
             $this->error(__('No locale specified. Provide a locale argument or use --all.'));
+
             return self::FAILURE;
         }
 
@@ -34,12 +35,13 @@ class LaravelMissingTranslationsCommand extends Command
     {
         if ($this->option('all')) {
             $files = glob(lang_path('*.json'));
-            return array_map(fn($f) => pathinfo($f, PATHINFO_FILENAME), $files);
+
+            return array_map(fn ($f) => pathinfo($f, PATHINFO_FILENAME), $files);
         }
 
         $locale = $this->argument('locale');
 
-        if (!$locale) {
+        if (! $locale) {
             return [];
         }
 
@@ -56,10 +58,11 @@ class LaravelMissingTranslationsCommand extends Command
 
         if (empty($missingKeys)) {
             $this->info(__('No missing translations found for locale: :locale', ['locale' => $locale]));
+
             return;
         }
 
-        $rows = array_map(fn($key) => [$key], $missingKeys);
+        $rows = array_map(fn ($key) => [$key], $missingKeys);
         $this->table([__('Missing Key')], $rows);
 
         $this->line(__('Found :count missing key(s) for locale [:locale].', [
@@ -69,6 +72,7 @@ class LaravelMissingTranslationsCommand extends Command
 
         if ($this->option('dry-run')) {
             $this->warn(__('Dry run mode: no changes written.'));
+
             return;
         }
 
