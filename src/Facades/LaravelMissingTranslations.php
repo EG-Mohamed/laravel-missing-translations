@@ -5,12 +5,12 @@ namespace MohamedSaid\LaravelMissingTranslations\Facades;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @see \Mohamed Said\LaravelMissingTranslations\LaravelMissingTranslations
+ * @see \MohamedSaid\LaravelMissingTranslations\LaravelMissingTranslations
  */
 class LaravelMissingTranslations extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return \Mohamed Said\LaravelMissingTranslations\LaravelMissingTranslations::class;
+        return \MohamedSaid\LaravelMissingTranslations\LaravelMissingTranslations::class;
     }
 }

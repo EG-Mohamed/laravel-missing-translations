@@ -4,7 +4,7 @@ namespace MohamedSaid\LaravelMissingTranslations\Tests;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Mohamed Said\LaravelMissingTranslations\LaravelMissingTranslationsServiceProvider;
+use MohamedSaid\LaravelMissingTranslations\LaravelMissingTranslationsServiceProvider;
 
 class TestCase extends Orchestra
 {
@@ -13,7 +13,7 @@ class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'Mohamed Said\\LaravelMissingTranslations\\Database\\Factories\\'.class_basename($modelName).'Factory'
+            fn (string $modelName) => 'MohamedSaid\\LaravelMissingTranslations\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
     }
 

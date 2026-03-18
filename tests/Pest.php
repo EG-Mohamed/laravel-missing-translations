@@ -1,5 +1,5 @@
 <?php
 
-use Mohamed Said\LaravelMissingTranslations\Tests\TestCase;
+use MohamedSaid\LaravelMissingTranslations\Tests\TestCase;
 
 uses(TestCase::class)->in(__DIR__);

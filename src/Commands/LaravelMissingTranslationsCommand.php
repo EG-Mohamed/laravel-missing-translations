@@ -3,7 +3,7 @@
 namespace MohamedSaid\LaravelMissingTranslations\Commands;
 
 use Illuminate\Console\Command;
-use Mohamed Said\LaravelMissingTranslations\LaravelMissingTranslations;
+use MohamedSaid\LaravelMissingTranslations\LaravelMissingTranslations;
 
 class LaravelMissingTranslationsCommand extends Command
 {
