@@ -1,6 +1,6 @@
 <?php
 
-namespace Mohamed Said\LaravelMissingTranslations\Facades;
+namespace MohamedSaid\LaravelMissingTranslations\Facades;
 
 use Illuminate\Support\Facades\Facade;
 

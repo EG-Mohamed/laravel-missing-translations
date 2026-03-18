@@ -1,6 +1,6 @@
 <?php
 
-namespace Mohamed Said\LaravelMissingTranslations\Commands;
+namespace MohamedSaid\LaravelMissingTranslations\Commands;
 
 use Illuminate\Console\Command;
 use Mohamed Said\LaravelMissingTranslations\LaravelMissingTranslations;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Mohamed Said\LaravelMissingTranslations;
+namespace MohamedSaid\LaravelMissingTranslations;
 
 use Symfony\Component\Finder\Finder;
 

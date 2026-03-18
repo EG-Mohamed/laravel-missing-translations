@@ -1,66 +1,91 @@
-# This is my package laravelmissingtranslations
+# Laravel Missing Translations
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/eg-mohamed/laravelmissingtranslations.svg?style=flat-square)](https://packagist.org/packages/eg-mohamed/laravelmissingtranslations)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/eg-mohamed/laravelmissingtranslations/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/eg-mohamed/laravelmissingtranslations/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/eg-mohamed/laravelmissingtranslations/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/eg-mohamed/laravelmissingtranslations/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/eg-mohamed/laravelmissingtranslations.svg?style=flat-square)](https://packagist.org/packages/eg-mohamed/laravelmissingtranslations)
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+A Laravel dev-tool that scans your project for translation function calls and appends any missing keys to your JSON locale files. No more manually hunting for untranslated strings.
 
-## Support us
-
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/LaravelMissingTranslations.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/LaravelMissingTranslations)
-
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
-
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
+Supports `__()`, `trans()`, `trans_choice()`, `@lang()`, `@choice()`, and `Lang::get/has/choice()`.
 
 ## Installation
 
-You can install the package via composer:
+Install as a dev dependency:
 
 ```bash
-composer require eg-mohamed/laravelmissingtranslations
+composer require eg-mohamed/laravelmissingtranslations --dev
 ```
 
-You can publish and run the migrations with:
-
-```bash
-php artisan vendor:publish --tag="laravelmissingtranslations-migrations"
-php artisan migrate
-```
-
-You can publish the config file with:
+Publish the config file:
 
 ```bash
 php artisan vendor:publish --tag="laravelmissingtranslations-config"
 ```
 
-This is the contents of the published config file:
+## Configuration
 
 ```php
+// config/laravelmissingtranslations.php
+
 return [
+    // Directories to scan
+    'paths' => [app_path(), resource_path('views')],
+
+    // File extensions to include
+    'extensions' => ['php', 'blade.php'],
+
+    // Directories to exclude from scanning
+    'exclude_paths' => [],
+
+    // Sort keys alphabetically in the JSON output
+    'sort_keys' => true,
+
+    // Skip dotted keys like 'auth.failed' (PHP array-based translations)
+    'exclude_dot_keys' => false,
+
+    // Translation functions to detect
+    'include_functions' => ['__', 'trans', 'trans_choice', '@lang', '@choice', 'Lang::get', 'Lang::has', 'Lang::choice'],
+
+    // Regex patterns for keys to skip
+    'exclude_patterns' => [],
+
+    // Flags passed to json_encode when writing locale files
+    'json_flags' => JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE,
 ];
-```
-
-Optionally, you can publish the views using
-
-```bash
-php artisan vendor:publish --tag="laravelmissingtranslations-views"
 ```
 
 ## Usage
 
-```php
-$laravelMissingTranslations = new Mohamed Said\LaravelMissingTranslations();
-echo $laravelMissingTranslations->echoPhrase('Hello, Mohamed Said!');
-```
-
-## Testing
+### Scan and write missing keys
 
 ```bash
-composer test
+php artisan missing-translations en
 ```
+
+This scans your project, compares found keys against `lang/en.json`, and appends any missing ones with an empty string value.
+
+### Preview without writing
+
+```bash
+php artisan missing-translations en --dry-run
+```
+
+Displays a table of missing keys without modifying any files.
+
+### Process all existing locale files at once
+
+```bash
+php artisan missing-translations --all
+```
+
+Runs the scan against every `lang/*.json` file found in your project.
+
+## How it works
+
+1. Uses Symfony Finder to crawl configured `paths` for files matching configured `extensions`
+2. Extracts translation keys via regex from all supported function calls
+3. Diffs found keys against the existing locale JSON file
+4. Appends missing keys with an empty string value, leaving existing translations untouched
+5. Re-running the command is safe — no duplicates are ever added
 
 ## Changelog
 

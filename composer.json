@@ -30,12 +30,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Mohamed Said\\LaravelMissingTranslations\\": "src/"
+            "MohamedSaid\\LaravelMissingTranslations\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Mohamed Said\\LaravelMissingTranslations\\Tests\\": "tests/",
+            "MohamedSaid\\LaravelMissingTranslations\\Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/"
         }
     },
@@ -56,10 +56,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Mohamed Said\\LaravelMissingTranslations\\LaravelMissingTranslationsServiceProvider"
+                "MohamedSaid\\LaravelMissingTranslations\\LaravelMissingTranslationsServiceProvider"
             ],
             "aliases": {
-                "LaravelMissingTranslations": "Mohamed Said\\LaravelMissingTranslations\\Facades\\LaravelMissingTranslations"
+                "LaravelMissingTranslations": "MohamedSaid\\LaravelMissingTranslations\\Facades\\LaravelMissingTranslations"
             }
         }
     },
