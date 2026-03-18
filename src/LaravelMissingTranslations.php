@@ -12,6 +12,7 @@ class LaravelMissingTranslations
         $paths = config('laravelmissingtranslations.paths', []);
         $extensions = config('laravelmissingtranslations.extensions', ['php', 'blade.php']);
         $excludePaths = config('laravelmissingtranslations.exclude_paths', []);
+        $functions = config('laravelmissingtranslations.include_functions', []);
 
         $finder = new Finder();
         $finder->files()->in($paths);
@@ -25,17 +26,20 @@ class LaravelMissingTranslations
         }
 
         foreach ($finder as $file) {
-            $keys = array_merge($keys, $this->extractKeys($file->getRealPath()));
+            $keys = array_merge($keys, $this->extractKeys($file->getRealPath(), $functions));
         }
 
         return array_values(array_unique($keys));
     }
 
-    public function extractKeys(string $filePath): array
+    public function extractKeys(string $filePath, array $functions = []): array
     {
         $content = file_get_contents($filePath);
         $keys = [];
-        $functions = config('laravelmissingtranslations.include_functions', []);
+
+        if (empty($functions)) {
+            $functions = config('laravelmissingtranslations.include_functions', []);
+        }
 
         $phpFunctions = array_filter($functions, fn($f) => !str_starts_with($f, '@') && !str_starts_with($f, 'Lang::'));
         $bladeDirectives = array_filter($functions, fn($f) => str_starts_with($f, '@'));
@@ -108,6 +112,20 @@ class LaravelMissingTranslations
         return $missing;
     }
 
+    public function getUnusedKeys(string $locale): array
+    {
+        $langFile = lang_path($locale . '.json');
+
+        if (!file_exists($langFile)) {
+            return [];
+        }
+
+        $existing = json_decode(file_get_contents($langFile), true) ?? [];
+        $allKeys = $this->scan();
+
+        return array_values(array_diff(array_keys($existing), $allKeys));
+    }
+
     public function writeToJson(string $locale, array $missingKeys): int
     {
         $langDir = lang_path();
@@ -117,15 +135,22 @@ class LaravelMissingTranslations
             mkdir($langDir, 0755, true);
         }
 
-        $existing = [];
+        $fp = fopen($langFile, file_exists($langFile) ? 'r+' : 'w+');
+        flock($fp, LOCK_EX);
 
-        if (file_exists($langFile)) {
-            $existing = json_decode(file_get_contents($langFile), true) ?? [];
+        $existing = [];
+        $size = fstat($fp)['size'] ?? 0;
+
+        if ($size > 0) {
+            $raw = fread($fp, $size);
+            $existing = json_decode($raw, true) ?? [];
         }
 
         $newEntries = [];
         foreach ($missingKeys as $key) {
-            $newEntries[$key] = '';
+            if (!array_key_exists($key, $existing)) {
+                $newEntries[$key] = '';
+            }
         }
 
         $merged = array_merge($existing, $newEntries);
@@ -135,8 +160,60 @@ class LaravelMissingTranslations
         }
 
         $flags = config('laravelmissingtranslations.json_flags', JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        file_put_contents($langFile, json_encode($merged, $flags));
+        $json = json_encode($merged, $flags);
+
+        ftruncate($fp, 0);
+        rewind($fp);
+        fwrite($fp, $json);
+        flock($fp, LOCK_UN);
+        fclose($fp);
 
         return count($newEntries);
+    }
+
+    public function removeKeys(string $locale, array $keys): int
+    {
+        $langFile = lang_path($locale . '.json');
+
+        if (!file_exists($langFile) || empty($keys)) {
+            return 0;
+        }
+
+        $fp = fopen($langFile, 'r+');
+        flock($fp, LOCK_EX);
+
+        $size = fstat($fp)['size'] ?? 0;
+        $existing = [];
+
+        if ($size > 0) {
+            $raw = fread($fp, $size);
+            $existing = json_decode($raw, true) ?? [];
+        }
+
+        $removed = 0;
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $existing)) {
+                unset($existing[$key]);
+                $removed++;
+            }
+        }
+
+        if ($removed > 0) {
+            if (config('laravelmissingtranslations.sort_keys', true)) {
+                ksort($existing);
+            }
+
+            $flags = config('laravelmissingtranslations.json_flags', JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            $json = json_encode($existing, $flags);
+
+            ftruncate($fp, 0);
+            rewind($fp);
+            fwrite($fp, $json);
+        }
+
+        flock($fp, LOCK_UN);
+        fclose($fp);
+
+        return $removed;
     }
 }

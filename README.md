@@ -62,13 +62,24 @@ php artisan missing-translations en
 
 This scans your project, compares found keys against `lang/en.json`, and appends any missing ones with an empty string value.
 
+If no locale argument is provided and `--all` is not used, the command falls back to `config('app.locale')` automatically:
+
+```bash
+php artisan missing-translations
+```
+
 ### Preview without writing
 
 ```bash
 php artisan missing-translations en --dry-run
 ```
 
-Displays a table of missing keys without modifying any files.
+Displays a table of missing keys without modifying any files. Also shows summary statistics:
+
+```
+Keys scanned: 42 | Existing: 38 | Missing: 4
+Dry run mode: no changes written.
+```
 
 ### Process all existing locale files at once
 
@@ -76,7 +87,52 @@ Displays a table of missing keys without modifying any files.
 php artisan missing-translations --all
 ```
 
-Runs the scan against every `lang/*.json` file found in your project.
+Runs the scan against every `lang/*.json` file found in your project. If no JSON files exist, a helpful message is shown instead of a generic error.
+
+### Remove unused keys
+
+```bash
+php artisan missing-translations en --remove-unused
+```
+
+Finds keys that exist in `lang/en.json` but are no longer referenced in any scanned file, displays them, and removes them. Combine with `--dry-run` to preview without making changes:
+
+```bash
+php artisan missing-translations en --remove-unused --dry-run
+```
+
+### JSON output for CI pipelines
+
+```bash
+php artisan missing-translations en --json
+```
+
+Outputs results as JSON to stdout instead of the table format. Useful for CI pipelines — e.g. fail a build if missing translations count > 0:
+
+```json
+{
+    "locale": "en",
+    "existing_count": 38,
+    "missing_count": 4,
+    "missing_keys": [
+        "New Key One",
+        "New Key Two"
+    ]
+}
+```
+
+With `--remove-unused`:
+
+```json
+{
+    "locale": "en",
+    "existing_count": 38,
+    "missing_count": 4,
+    "missing_keys": ["New Key One"],
+    "unused_count": 2,
+    "unused_keys": ["Old Key", "Stale Key"]
+}
+```
 
 ## How it works
 
@@ -85,6 +141,7 @@ Runs the scan against every `lang/*.json` file found in your project.
 3. Diffs found keys against the existing locale JSON file
 4. Appends missing keys with an empty string value, leaving existing translations untouched
 5. Re-running the command is safe — no duplicates are ever added
+6. File writes use `LOCK_EX` to prevent corruption from concurrent runs
 
 ## Changelog
 
