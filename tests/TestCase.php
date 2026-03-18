@@ -3,8 +3,8 @@
 namespace MohamedSaid\LaravelMissingTranslations\Tests;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Orchestra\Testbench\TestCase as Orchestra;
 use MohamedSaid\LaravelMissingTranslations\LaravelMissingTranslationsServiceProvider;
+use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
 {

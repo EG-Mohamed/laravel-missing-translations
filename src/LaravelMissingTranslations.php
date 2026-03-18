@@ -14,11 +14,11 @@ class LaravelMissingTranslations
         $excludePaths = config('laravelmissingtranslations.exclude_paths', []);
         $functions = config('laravelmissingtranslations.include_functions', []);
 
-        $finder = new Finder();
+        $finder = new Finder;
         $finder->files()->in($paths);
 
         foreach ($extensions as $ext) {
-            $finder->name('*.' . $ext);
+            $finder->name('*.'.$ext);
         }
 
         foreach ($excludePaths as $excludePath) {
@@ -41,29 +41,29 @@ class LaravelMissingTranslations
             $functions = config('laravelmissingtranslations.include_functions', []);
         }
 
-        $phpFunctions = array_filter($functions, fn($f) => !str_starts_with($f, '@') && !str_starts_with($f, 'Lang::'));
-        $bladeDirectives = array_filter($functions, fn($f) => str_starts_with($f, '@'));
-        $facadeMethods = array_filter($functions, fn($f) => str_starts_with($f, 'Lang::'));
+        $phpFunctions = array_filter($functions, fn ($f) => ! str_starts_with($f, '@') && ! str_starts_with($f, 'Lang::'));
+        $bladeDirectives = array_filter($functions, fn ($f) => str_starts_with($f, '@'));
+        $facadeMethods = array_filter($functions, fn ($f) => str_starts_with($f, 'Lang::'));
 
-        if (!empty($phpFunctions)) {
-            $escaped = array_map(fn($f) => preg_quote($f, '/'), $phpFunctions);
-            $pattern = '/(?:' . implode('|', $escaped) . ')\s*\(\s*([\'"])(.+?)\1/';
+        if (! empty($phpFunctions)) {
+            $escaped = array_map(fn ($f) => preg_quote($f, '/'), $phpFunctions);
+            $pattern = '/(?:'.implode('|', $escaped).')\s*\(\s*([\'"])(.+?)\1/';
             if (preg_match_all($pattern, $content, $matches)) {
                 $keys = array_merge($keys, $matches[2]);
             }
         }
 
-        if (!empty($bladeDirectives)) {
-            $names = array_map(fn($f) => preg_quote(ltrim($f, '@'), '/'), $bladeDirectives);
-            $pattern = '/@(?:' . implode('|', $names) . ')\s*\(\s*([\'"])(.+?)\1/';
+        if (! empty($bladeDirectives)) {
+            $names = array_map(fn ($f) => preg_quote(ltrim($f, '@'), '/'), $bladeDirectives);
+            $pattern = '/@(?:'.implode('|', $names).')\s*\(\s*([\'"])(.+?)\1/';
             if (preg_match_all($pattern, $content, $matches)) {
                 $keys = array_merge($keys, $matches[2]);
             }
         }
 
-        if (!empty($facadeMethods)) {
-            $methods = array_map(fn($f) => preg_quote(explode('::', $f)[1], '/'), $facadeMethods);
-            $pattern = '/Lang::(?:' . implode('|', $methods) . ')\s*\(\s*([\'"])(.+?)\1/';
+        if (! empty($facadeMethods)) {
+            $methods = array_map(fn ($f) => preg_quote(explode('::', $f)[1], '/'), $facadeMethods);
+            $pattern = '/Lang::(?:'.implode('|', $methods).')\s*\(\s*([\'"])(.+?)\1/';
             if (preg_match_all($pattern, $content, $matches)) {
                 $keys = array_merge($keys, $matches[2]);
             }
@@ -75,7 +75,7 @@ class LaravelMissingTranslations
     public function getMissingKeys(string $locale): array
     {
         $allKeys = $this->scan();
-        $langFile = lang_path($locale . '.json');
+        $langFile = lang_path($locale.'.json');
         $existing = [];
 
         if (file_exists($langFile)) {
@@ -104,7 +104,7 @@ class LaravelMissingTranslations
                 }
             }
 
-            if (!$excluded) {
+            if (! $excluded) {
                 $missing[] = $key;
             }
         }
@@ -129,9 +129,9 @@ class LaravelMissingTranslations
     public function writeToJson(string $locale, array $missingKeys): int
     {
         $langDir = lang_path();
-        $langFile = lang_path($locale . '.json');
+        $langFile = lang_path($locale.'.json');
 
-        if (!is_dir($langDir)) {
+        if (! is_dir($langDir)) {
             mkdir($langDir, 0755, true);
         }
 

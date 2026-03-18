@@ -2,9 +2,9 @@
 
 namespace MohamedSaid\LaravelMissingTranslations;
 
+use MohamedSaid\LaravelMissingTranslations\Commands\LaravelMissingTranslationsCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use MohamedSaid\LaravelMissingTranslations\Commands\LaravelMissingTranslationsCommand;
 
 class LaravelMissingTranslationsServiceProvider extends PackageServiceProvider
 {
