@@ -44,10 +44,11 @@ class LaravelMissingTranslationsCommand extends Command
 
             if (empty($files)) {
                 $this->error(__('No JSON locale files found. Provide a locale argument to create one.'));
+
                 return [];
             }
 
-            return array_map(fn($f) => pathinfo($f, PATHINFO_FILENAME), $files);
+            return array_map(fn ($f) => pathinfo($f, PATHINFO_FILENAME), $files);
         }
 
         $locale = $this->argument('locale') ?? config('app.locale');
@@ -67,7 +68,7 @@ class LaravelMissingTranslationsCommand extends Command
         $missingKeys = $scanner->getMissingKeys($locale);
         $this->output->progressFinish();
 
-        $langFile = lang_path($locale . '.json');
+        $langFile = lang_path($locale.'.json');
         $existingKeys = file_exists($langFile)
 
             ? array_keys(json_decode(file_get_contents($langFile), true) ?? [])
@@ -75,13 +76,13 @@ class LaravelMissingTranslationsCommand extends Command
 
         $unusedKeys = $this->option('remove-unused') ? $scanner->getUnusedKeys($locale) : [];
 
-        if (!empty($missingKeys)) {
+        if (! empty($missingKeys)) {
             $rows = array_map(fn ($key) => [$key], $missingKeys);
             $this->table([__('Missing Key')], $rows);
         }
 
-        if ($this->option('remove-unused') && !empty($unusedKeys)) {
-            $rows = array_map(fn($key) => [$key], $unusedKeys);
+        if ($this->option('remove-unused') && ! empty($unusedKeys)) {
+            $rows = array_map(fn ($key) => [$key], $unusedKeys);
             $this->table([__('Unused Key')], $rows);
         }
 
@@ -103,7 +104,7 @@ class LaravelMissingTranslationsCommand extends Command
             return;
         }
 
-        if (!empty($missingKeys)) {
+        if (! empty($missingKeys)) {
             $written = $scanner->writeToJson($locale, $missingKeys);
             $this->info(__('Written :count new key(s) to lang/:locale.json.', [
                 'count' => $written,
@@ -113,7 +114,7 @@ class LaravelMissingTranslationsCommand extends Command
             $this->info(__('No missing translations found for locale: :locale', ['locale' => $locale]));
         }
 
-        if ($this->option('remove-unused') && !empty($unusedKeys)) {
+        if ($this->option('remove-unused') && ! empty($unusedKeys)) {
             $removed = $scanner->removeKeys($locale, $unusedKeys);
             $this->info(__('Removed :count unused key(s) from lang/:locale.json.', [
                 'count' => $removed,
@@ -128,7 +129,7 @@ class LaravelMissingTranslationsCommand extends Command
 
         foreach ($locales as $locale) {
             $missingKeys = $scanner->getMissingKeys($locale);
-            $langFile = lang_path($locale . '.json');
+            $langFile = lang_path($locale.'.json');
             $existingKeys = file_exists($langFile)
                 ? array_keys(json_decode(file_get_contents($langFile), true) ?? [])
                 : [];
@@ -148,11 +149,11 @@ class LaravelMissingTranslationsCommand extends Command
 
             $result[] = $entry;
 
-            if (!$this->option('dry-run') && !empty($missingKeys)) {
+            if (! $this->option('dry-run') && ! empty($missingKeys)) {
                 $scanner->writeToJson($locale, $missingKeys);
             }
 
-            if ($this->option('remove-unused') && !$this->option('dry-run') && !empty($entry['unused_keys'] ?? [])) {
+            if ($this->option('remove-unused') && ! $this->option('dry-run') && ! empty($entry['unused_keys'] ?? [])) {
                 $scanner->removeKeys($locale, $entry['unused_keys']);
             }
         }
