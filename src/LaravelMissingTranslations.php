@@ -114,9 +114,9 @@ class LaravelMissingTranslations
 
     public function getUnusedKeys(string $locale): array
     {
-        $langFile = lang_path($locale . '.json');
+        $langFile = lang_path($locale.'.json');
 
-        if (!file_exists($langFile)) {
+        if (! file_exists($langFile)) {
             return [];
         }
 
@@ -148,7 +148,7 @@ class LaravelMissingTranslations
 
         $newEntries = [];
         foreach ($missingKeys as $key) {
-            if (!array_key_exists($key, $existing)) {
+            if (! array_key_exists($key, $existing)) {
                 $newEntries[$key] = '';
             }
         }
@@ -173,9 +173,9 @@ class LaravelMissingTranslations
 
     public function removeKeys(string $locale, array $keys): int
     {
-        $langFile = lang_path($locale . '.json');
+        $langFile = lang_path($locale.'.json');
 
-        if (!file_exists($langFile) || empty($keys)) {
+        if (! file_exists($langFile) || empty($keys)) {
             return 0;
         }
 
