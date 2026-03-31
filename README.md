@@ -4,6 +4,8 @@
 
 A Laravel dev-tool that scans your project for translation function calls and appends any missing keys to your JSON locale files. No more manually hunting for untranslated strings.
 
+Supported Laravel versions: 11, 12, and 13.
+
 Supports `__()`, `trans()`, `trans_choice()`, `@lang()`, `@choice()`, and `Lang::get/has/choice()`.
 
 ## Installation
