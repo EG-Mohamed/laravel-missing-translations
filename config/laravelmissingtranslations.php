@@ -7,7 +7,7 @@ return [
     ],
     'extensions' => ['php', 'blade.php'],
     'exclude_paths' => [],
-    'sort_keys' => true,
+    'sort_keys' => false,
     'exclude_dot_keys' => false,
     'include_functions' => [
         '__',
