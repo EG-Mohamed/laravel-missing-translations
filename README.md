@@ -185,6 +185,26 @@ Tab::make('Account Settings')         // detected
 TextInput::make('email')              // NOT detected — looks like a field name
 ```
 
+**Auto-generated labels are captured too.** When a Filament field, column, or entry has no explicit `->label()`, Filament generates a label from the field name (e.g. `scheduled_time` → `Scheduled time`, `amount` → `Amount`). The scanner picks these up automatically:
+
+```php
+TextColumn::make('scheduled_time')->time()->sortable(),
+// captured as: "Scheduled time"
+
+TextColumn::make('amount')->numeric()->sortable(),
+// captured as: "Amount"
+
+TextInput::make('firstName'),
+// captured as: "First name"
+```
+
+The auto-label pass is skipped whenever the chain contains `->label(...)` or `->translateLabel(...)`.
+
+Relationship dot-notation is handled the same way Filament does it:
+
+- **Columns** use the second-to-last segment: `charityCase.title` → `Charity case`, `user.profile.name` → `Profile`
+- **Fields and entries** use the last segment: `user.name` → `Name`
+
 **Keys wrapped in `__()` are never double-counted.** If you write `->label(__('Email Address'))`, the key is captured by the standard `__()` scanner only.
 
 **Extend the method list** in config to add any custom Filament methods or third-party component methods:

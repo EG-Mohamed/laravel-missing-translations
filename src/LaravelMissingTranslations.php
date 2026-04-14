@@ -104,7 +104,73 @@ class LaravelMissingTranslations
             }
         }
 
+        $autoLabelFields = config('laravelmissingtranslations.filament.auto_label_fields', []);
+        $autoLabelColumns = config('laravelmissingtranslations.filament.auto_label_columns', []);
+
+        $allAutoComponents = array_merge(
+            array_map(fn ($c) => [$c, 'field'], $autoLabelFields),
+            array_map(fn ($c) => [$c, 'column'], $autoLabelColumns),
+        );
+
+        if (! empty($allAutoComponents)) {
+            $allNames = array_map(fn ($item) => preg_quote($item[0], '/'), $allAutoComponents);
+            $pattern = '/(?:'.implode('|', $allNames).')::make\s*\(\s*([\'"])([A-Za-z_][A-Za-z0-9_.]*)\1\s*\)/';
+
+            if (preg_match_all($pattern, $content, $matches, PREG_OFFSET_CAPTURE)) {
+                foreach ($matches[0] as $i => $fullMatch) {
+                    $componentName = preg_replace('/::make.*/', '', $fullMatch[0]);
+                    $fieldName = $matches[2][$i][0];
+                    $startOffset = $fullMatch[1] + strlen($fullMatch[0]);
+                    $endOffset = isset($matches[0][$i + 1])
+                        ? $matches[0][$i + 1][1]
+                        : min(strlen($content), $startOffset + 2000);
+
+                    $chain = substr($content, $startOffset, $endOffset - $startOffset);
+
+                    if (preg_match('/->\s*(?:label|translateLabel)\s*\(/', $chain)) {
+                        continue;
+                    }
+
+                    $isColumn = in_array($componentName, $autoLabelColumns);
+                    $keys[] = $isColumn
+                        ? $this->humanizeColumnName($fieldName)
+                        : $this->humanizeFieldName($fieldName);
+                }
+            }
+        }
+
         return $keys;
+    }
+
+    private function humanizeFieldName(string $name): string
+    {
+        if (str_contains($name, '.')) {
+            $name = substr($name, strrpos($name, '.') + 1);
+        }
+
+        $name = preg_replace('/(?<=[a-z])(?=[A-Z])/', '-', $name);
+        $name = preg_replace('/[_-]+/', ' ', $name);
+        $name = preg_replace('/\s+/', ' ', trim($name));
+
+        return ucfirst(strtolower($name));
+    }
+
+    private function humanizeColumnName(string $name): string
+    {
+        if (str_contains($name, '.')) {
+            $lastDot = strrpos($name, '.');
+            $beforeLast = substr($name, 0, $lastDot);
+            $secondLastDot = strrpos($beforeLast, '.');
+            $name = $secondLastDot !== false
+                ? substr($beforeLast, $secondLastDot + 1)
+                : $beforeLast;
+        }
+
+        $name = preg_replace('/(?<=[a-z])(?=[A-Z])/', '-', $name);
+        $name = preg_replace('/[_-]+/', ' ', $name);
+        $name = preg_replace('/\s+/', ' ', trim($name));
+
+        return ucfirst(strtolower($name));
     }
 
     public function getMissingKeys(string $locale): array
