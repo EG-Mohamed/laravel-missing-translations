@@ -6,7 +6,7 @@ A Laravel dev-tool that scans your project for translation function calls and ap
 
 Supported Laravel versions: 11, 12, and 13.
 
-Supports `__()`, `trans()`, `trans_choice()`, `@lang()`, `@choice()`, and `Lang::get/has/choice()`.
+Supports `__()`, `trans()`, `trans_choice()`, `@lang()`, `@choice()`, `Lang::get/has/choice()`, and Filament fields, columns, entries, and actions.
 
 ## Installation
 
@@ -19,7 +19,7 @@ composer require eg-mohamed/laravelmissingtranslations --dev
 Publish the config file:
 
 ```bash
-php artisan vendor:publish --tag="laravelmissingtranslations-config"
+php artisan vendor:publish --tag="missing-translations-config"
 ```
 
 ## Configuration
@@ -51,6 +51,25 @@ return [
 
     // Flags passed to json_encode when writing locale files
     'json_flags' => JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE,
+
+    // Filament field, column, entry, and action scanning
+    'filament' => [
+        'enabled' => true,
+
+        // Instance methods whose first string literal argument is user-facing text
+        'methods' => [
+            'label', 'placeholder', 'helperText', 'hint', 'hintTooltip',
+            'description', 'heading', 'subheading', 'title',
+            'modalHeading', 'modalDescription', 'modalSubmitActionLabel', 'modalCancelActionLabel',
+            'emptyStateHeading', 'emptyStateDescription', 'tooltip',
+            'prefix', 'suffix', 'navigationLabel', 'navigationGroup',
+            'pluralLabel', 'singularLabel', 'breadcrumb',
+        ],
+
+        // Component classes whose ::make('Label') first argument is a display label
+        // Field-name-style strings like ::make('email') are automatically excluded
+        'static_methods' => ['Tab', 'Section', 'Fieldset', 'Group', 'Step'],
+    ],
 ];
 ```
 
@@ -136,14 +155,59 @@ With `--remove-unused`:
 }
 ```
 
+## Filament Support
+
+When `filament.enabled` is `true`, the scanner also detects plain string literals passed directly to Filament component methods — no `__()` wrapper required.
+
+**Fields, columns, entries, and actions are all covered:**
+
+```php
+TextInput::make('email')
+    ->label('Email Address')           // detected
+    ->placeholder('Enter your email')  // detected
+    ->helperText('Never shared');      // detected
+
+TextColumn::make('status')
+    ->label('Current Status')          // detected
+    ->tooltip('Last updated today');   // detected
+
+Action::make('approve')
+    ->label('Approve')                 // detected
+    ->modalHeading('Confirm Approval') // detected
+    ->modalSubmitActionLabel('Yes, approve'); // detected
+```
+
+**Structural components** like `Section`, `Tab`, `Fieldset`, `Group`, and `Step` are scanned when their `::make()` argument looks like a display label (contains a space or starts with an uppercase letter):
+
+```php
+Section::make('Personal Information') // detected — looks like a label
+Tab::make('Account Settings')         // detected
+TextInput::make('email')              // NOT detected — looks like a field name
+```
+
+**Keys wrapped in `__()` are never double-counted.** If you write `->label(__('Email Address'))`, the key is captured by the standard `__()` scanner only.
+
+**Extend the method list** in config to add any custom Filament methods or third-party component methods:
+
+```php
+'filament' => [
+    'methods' => [
+        ...
+        'columnLabel',
+        'groupLabel',
+    ],
+],
+```
+
 ## How it works
 
 1. Uses Symfony Finder to crawl configured `paths` for files matching configured `extensions`
 2. Extracts translation keys via regex from all supported function calls
-3. Diffs found keys against the existing locale JSON file
-4. Appends missing keys with an empty string value, leaving existing translations untouched
-5. Re-running the command is safe — no duplicates are ever added
-6. File writes use `LOCK_EX` to prevent corruption from concurrent runs
+3. When Filament scanning is enabled, also extracts plain string literals from label-like methods and structural component names
+4. Diffs found keys against the existing locale JSON file
+5. Appends missing keys with an empty string value, leaving existing translations untouched
+6. Re-running the command is safe — no duplicates are ever added
+7. File writes use `LOCK_EX` to prevent corruption from concurrent runs
 
 ## Changelog
 

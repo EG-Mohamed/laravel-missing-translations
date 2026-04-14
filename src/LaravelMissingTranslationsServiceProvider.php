@@ -15,4 +15,11 @@ class LaravelMissingTranslationsServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasCommand(LaravelMissingTranslationsCommand::class);
     }
+
+    public function packageBooted(): void
+    {
+        $this->publishes([
+            __DIR__.'/../config/laravelmissingtranslations.php' => config_path('laravelmissingtranslations.php'),
+        ], 'missing-translations-config');
+    }
 }

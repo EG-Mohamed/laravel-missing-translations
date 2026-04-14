@@ -69,6 +69,41 @@ class LaravelMissingTranslations
             }
         }
 
+        if (config('laravelmissingtranslations.filament.enabled', false)) {
+            $keys = array_merge($keys, $this->extractFilamentKeys($content));
+        }
+
+        return $keys;
+    }
+
+    private function extractFilamentKeys(string $content): array
+    {
+        $keys = [];
+
+        $methods = config('laravelmissingtranslations.filament.methods', []);
+
+        if (! empty($methods)) {
+            $escaped = array_map(fn ($m) => preg_quote($m, '/'), $methods);
+            $pattern = '/->(?:'.implode('|', $escaped).')\s*\(\s*([\'"])(.+?)\1\s*\)/';
+            if (preg_match_all($pattern, $content, $matches)) {
+                $keys = array_merge($keys, $matches[2]);
+            }
+        }
+
+        $staticClasses = config('laravelmissingtranslations.filament.static_methods', []);
+
+        if (! empty($staticClasses)) {
+            $escaped = array_map(fn ($c) => preg_quote($c, '/'), $staticClasses);
+            $pattern = '/(?:'.implode('|', $escaped).')::make\s*\(\s*([\'"])(.+?)\1\s*\)/';
+            if (preg_match_all($pattern, $content, $matches)) {
+                foreach ($matches[2] as $value) {
+                    if (str_contains($value, ' ') || preg_match('/^[A-Z][a-z]/', $value)) {
+                        $keys[] = $value;
+                    }
+                }
+            }
+        }
+
         return $keys;
     }
 
