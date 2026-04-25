@@ -9,10 +9,10 @@ class LaravelMissingTranslations
     public function scan(): array
     {
         $keys = [];
-        $paths = config('laravelmissingtranslations.paths', []);
-        $extensions = config('laravelmissingtranslations.extensions', ['php', 'blade.php']);
-        $excludePaths = config('laravelmissingtranslations.exclude_paths', []);
-        $functions = config('laravelmissingtranslations.include_functions', []);
+        $paths = config('laravel-missing-translations.paths', []);
+        $extensions = config('laravel-missing-translations.extensions', ['php', 'blade.php']);
+        $excludePaths = config('laravel-missing-translations.exclude_paths', []);
+        $functions = config('laravel-missing-translations.include_functions', []);
 
         $finder = new Finder;
         $finder->files()->in($paths);
@@ -38,7 +38,7 @@ class LaravelMissingTranslations
         $keys = [];
 
         if (empty($functions)) {
-            $functions = config('laravelmissingtranslations.include_functions', []);
+            $functions = config('laravel-missing-translations.include_functions', []);
         }
 
         $phpFunctions = array_filter($functions, fn ($f) => ! str_starts_with($f, '@') && ! str_starts_with($f, 'Lang::'));
@@ -69,7 +69,7 @@ class LaravelMissingTranslations
             }
         }
 
-        if (config('laravelmissingtranslations.filament.enabled', false)) {
+        if (config('laravel-missing-translations.filament.enabled', false)) {
             $keys = array_merge($keys, $this->extractFilamentKeys($content));
         }
 
@@ -80,7 +80,7 @@ class LaravelMissingTranslations
     {
         $keys = [];
 
-        $methods = config('laravelmissingtranslations.filament.methods', []);
+        $methods = config('laravel-missing-translations.filament.methods', []);
 
         if (! empty($methods)) {
             $escaped = array_map(fn ($m) => preg_quote($m, '/'), $methods);
@@ -90,7 +90,7 @@ class LaravelMissingTranslations
             }
         }
 
-        $staticClasses = config('laravelmissingtranslations.filament.static_methods', []);
+        $staticClasses = config('laravel-missing-translations.filament.static_methods', []);
 
         if (! empty($staticClasses)) {
             $escaped = array_map(fn ($c) => preg_quote($c, '/'), $staticClasses);
@@ -104,8 +104,8 @@ class LaravelMissingTranslations
             }
         }
 
-        $autoLabelFields = config('laravelmissingtranslations.filament.auto_label_fields', []);
-        $autoLabelColumns = config('laravelmissingtranslations.filament.auto_label_columns', []);
+        $autoLabelFields = config('laravel-missing-translations.filament.auto_label_fields', []);
+        $autoLabelColumns = config('laravel-missing-translations.filament.auto_label_columns', []);
 
         $allAutoComponents = array_merge(
             array_map(fn ($c) => [$c, 'field'], $autoLabelFields),
@@ -183,9 +183,9 @@ class LaravelMissingTranslations
             $existing = json_decode(file_get_contents($langFile), true) ?? [];
         }
 
-        $excludeDotKeys = config('laravelmissingtranslations.exclude_dot_keys', false);
-        $excludePatterns = config('laravelmissingtranslations.exclude_patterns', []);
-        $ignorePackageKeys = config('laravelmissingtranslations.ignore_package_keys', true);
+        $excludeDotKeys = config('laravel-missing-translations.exclude_dot_keys', false);
+        $excludePatterns = config('laravel-missing-translations.exclude_patterns', []);
+        $ignorePackageKeys = config('laravel-missing-translations.ignore_package_keys', true);
 
         $missing = [];
 
@@ -261,11 +261,11 @@ class LaravelMissingTranslations
 
         $merged = array_merge($existing, $newEntries);
 
-        if (config('laravelmissingtranslations.sort_keys', true)) {
+        if (config('laravel-missing-translations.sort_keys', true)) {
             ksort($merged);
         }
 
-        $flags = config('laravelmissingtranslations.json_flags', JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $flags = config('laravel-missing-translations.json_flags', JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         $json = json_encode($merged, $flags);
 
         ftruncate($fp, 0);
@@ -305,11 +305,11 @@ class LaravelMissingTranslations
         }
 
         if ($removed > 0) {
-            if (config('laravelmissingtranslations.sort_keys', true)) {
+            if (config('laravel-missing-translations.sort_keys', true)) {
                 ksort($existing);
             }
 
-            $flags = config('laravelmissingtranslations.json_flags', JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            $flags = config('laravel-missing-translations.json_flags', JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
             $json = json_encode($existing, $flags);
 
             ftruncate($fp, 0);

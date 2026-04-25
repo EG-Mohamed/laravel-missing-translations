@@ -1,12 +1,12 @@
 {
-    "name": "eg-mohamed/laravelmissingtranslations",
+    "name": "eg-mohamed/laravel-missing-translations",
     "description": "Scan Laravel project files and append missing translation keys to JSON locale files",
     "keywords": [
         "Mohamed Said",
         "laravel",
-        "laravelmissingtranslations"
+        "laravel-missing-translations"
     ],
-    "homepage": "https://github.com/eg-mohamed/laravelmissingtranslations",
+    "homepage": "https://github.com/eg-mohamed/laravel-missing-translations",
     "license": "MIT",
     "authors": [
         {
