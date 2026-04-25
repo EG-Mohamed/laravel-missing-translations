@@ -49,6 +49,9 @@ return [
     // Regex patterns for keys to skip
     'exclude_patterns' => [],
 
+    // Ignore package-namespaced keys like 'filament-shield::resource.role' (anything containing '::')
+    'ignore_package_keys' => true,
+
     // Flags passed to json_encode when writing locale files
     'json_flags' => JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE,
 

@@ -185,11 +185,16 @@ class LaravelMissingTranslations
 
         $excludeDotKeys = config('laravelmissingtranslations.exclude_dot_keys', false);
         $excludePatterns = config('laravelmissingtranslations.exclude_patterns', []);
+        $ignorePackageKeys = config('laravelmissingtranslations.ignore_package_keys', true);
 
         $missing = [];
 
         foreach ($allKeys as $key) {
             if (array_key_exists($key, $existing)) {
+                continue;
+            }
+
+            if ($ignorePackageKeys && str_contains($key, '::')) {
                 continue;
             }
 
