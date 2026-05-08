@@ -47,7 +47,7 @@ class LaravelMissingTranslations
 
         if (! empty($phpFunctions)) {
             $escaped = array_map(fn ($f) => preg_quote($f, '/'), $phpFunctions);
-            $pattern = '/(?:'.implode('|', $escaped).')\s*\(\s*([\'"])(.+?)\1/';
+            $pattern = '/(?:'.implode('|', $escaped).')\s*\(\s*([\'"])(.+)\1/';
             if (preg_match_all($pattern, $content, $matches)) {
                 $keys = array_merge($keys, $matches[2]);
             }
@@ -55,7 +55,7 @@ class LaravelMissingTranslations
 
         if (! empty($bladeDirectives)) {
             $names = array_map(fn ($f) => preg_quote(ltrim($f, '@'), '/'), $bladeDirectives);
-            $pattern = '/@(?:'.implode('|', $names).')\s*\(\s*([\'"])(.+?)\1/';
+            $pattern = '/@(?:'.implode('|', $names).')\s*\(\s*([\'"])(.+)\1/';
             if (preg_match_all($pattern, $content, $matches)) {
                 $keys = array_merge($keys, $matches[2]);
             }
@@ -63,7 +63,7 @@ class LaravelMissingTranslations
 
         if (! empty($facadeMethods)) {
             $methods = array_map(fn ($f) => preg_quote(explode('::', $f)[1], '/'), $facadeMethods);
-            $pattern = '/Lang::(?:'.implode('|', $methods).')\s*\(\s*([\'"])(.+?)\1/';
+            $pattern = '/Lang::(?:'.implode('|', $methods).')\s*\(\s*([\'"])(.+)\1/';
             if (preg_match_all($pattern, $content, $matches)) {
                 $keys = array_merge($keys, $matches[2]);
             }
@@ -84,7 +84,7 @@ class LaravelMissingTranslations
 
         if (! empty($methods)) {
             $escaped = array_map(fn ($m) => preg_quote($m, '/'), $methods);
-            $pattern = '/->(?:'.implode('|', $escaped).')\s*\(\s*([\'"])(.+?)\1\s*\)/';
+            $pattern = '/->(?:'.implode('|', $escaped).')\s*\(\s*([\'"])(.+)\1\s*\)/';
             if (preg_match_all($pattern, $content, $matches)) {
                 $keys = array_merge($keys, $matches[2]);
             }
@@ -94,7 +94,7 @@ class LaravelMissingTranslations
 
         if (! empty($staticClasses)) {
             $escaped = array_map(fn ($c) => preg_quote($c, '/'), $staticClasses);
-            $pattern = '/(?:'.implode('|', $escaped).')::make\s*\(\s*([\'"])(.+?)\1\s*\)/';
+            $pattern = '/(?:'.implode('|', $escaped).')::make\s*\(\s*([\'"])(.+)\1\s*\)/';
             if (preg_match_all($pattern, $content, $matches)) {
                 foreach ($matches[2] as $value) {
                     if (str_contains($value, ' ') || preg_match('/^[A-Z][a-z]/', $value)) {
