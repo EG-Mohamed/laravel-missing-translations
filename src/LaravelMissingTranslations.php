@@ -6,6 +6,12 @@ use Symfony\Component\Finder\Finder;
 
 class LaravelMissingTranslations
 {
+    /**
+     * Reusable quoted-string sub-pattern.
+     * Captures group 1 = quote char, group 2 = string content (supports escaped quotes).
+     */
+    private const QUOTED_STRING = '([\'"])((?:\\\\.|(?!\1).)*)\1';
+
     public function scan(): array
     {
         $keys = [];
@@ -45,25 +51,28 @@ class LaravelMissingTranslations
         $bladeDirectives = array_filter($functions, fn ($f) => str_starts_with($f, '@'));
         $facadeMethods = array_filter($functions, fn ($f) => str_starts_with($f, 'Lang::'));
 
+        // PHP helpers: __('key'), trans('key'), etc.
         if (! empty($phpFunctions)) {
             $escaped = array_map(fn ($f) => preg_quote($f, '/'), $phpFunctions);
-            $pattern = '/(?:'.implode('|', $escaped).')\s*\(\s*([\'"])(.+)\1/';
+            $pattern = '/(?<![\w\\\\])(?:'.implode('|', $escaped).')\s*\(\s*'.self::QUOTED_STRING.'/s';
             if (preg_match_all($pattern, $content, $matches)) {
                 $keys = array_merge($keys, $matches[2]);
             }
         }
 
+        // Blade directives: @lang('key'), @trans('key')
         if (! empty($bladeDirectives)) {
             $names = array_map(fn ($f) => preg_quote(ltrim($f, '@'), '/'), $bladeDirectives);
-            $pattern = '/@(?:'.implode('|', $names).')\s*\(\s*([\'"])(.+)\1/';
+            $pattern = '/@(?:'.implode('|', $names).')\s*\(\s*'.self::QUOTED_STRING.'/s';
             if (preg_match_all($pattern, $content, $matches)) {
                 $keys = array_merge($keys, $matches[2]);
             }
         }
 
+        // Facade: Lang::get('key'), Lang::choice('key', ...)
         if (! empty($facadeMethods)) {
             $methods = array_map(fn ($f) => preg_quote(explode('::', $f)[1], '/'), $facadeMethods);
-            $pattern = '/Lang::(?:'.implode('|', $methods).')\s*\(\s*([\'"])(.+)\1/';
+            $pattern = '/Lang::(?:'.implode('|', $methods).')\s*\(\s*'.self::QUOTED_STRING.'/s';
             if (preg_match_all($pattern, $content, $matches)) {
                 $keys = array_merge($keys, $matches[2]);
             }
@@ -73,30 +82,35 @@ class LaravelMissingTranslations
             $keys = array_merge($keys, $this->extractFilamentKeys($content));
         }
 
-        return $keys;
+        // Unescape any backslash-escaped chars captured inside string literals.
+        return array_map(fn ($k) => stripcslashes($k), $keys);
     }
 
     private function extractFilamentKeys(string $content): array
     {
         $keys = [];
 
+        // Chained methods: ->label('...'), ->placeholder('...')
         $methods = config('laravel-missing-translations.filament.methods', []);
 
         if (! empty($methods)) {
             $escaped = array_map(fn ($m) => preg_quote($m, '/'), $methods);
-            $pattern = '/->(?:'.implode('|', $escaped).')\s*\(\s*([\'"])(.+)\1\s*\)/';
+            $pattern = '/->\s*(?:'.implode('|', $escaped).')\s*\(\s*'.self::QUOTED_STRING.'\s*\)/s';
             if (preg_match_all($pattern, $content, $matches)) {
                 $keys = array_merge($keys, $matches[2]);
             }
         }
 
+        // Static ::make('Label') — only treat as label if it looks like one.
         $staticClasses = config('laravel-missing-translations.filament.static_methods', []);
 
         if (! empty($staticClasses)) {
             $escaped = array_map(fn ($c) => preg_quote($c, '/'), $staticClasses);
-            $pattern = '/(?:'.implode('|', $escaped).')::make\s*\(\s*([\'"])(.+)\1\s*\)/';
+            $pattern = '/(?<![\w\\\\])(?:'.implode('|', $escaped).')::make\s*\(\s*'.self::QUOTED_STRING.'\s*\)/s';
             if (preg_match_all($pattern, $content, $matches)) {
                 foreach ($matches[2] as $value) {
+                    // Heuristic: contains a space OR starts with an uppercase letter followed by lowercase
+                    // (i.e. looks like a human label, not a field/column key).
                     if (str_contains($value, ' ') || preg_match('/^[A-Z][a-z]/', $value)) {
                         $keys[] = $value;
                     }
@@ -104,6 +118,7 @@ class LaravelMissingTranslations
             }
         }
 
+        // Auto-label inference for fields/columns when no ->label() / ->translateLabel() is chained.
         $autoLabelFields = config('laravel-missing-translations.filament.auto_label_fields', []);
         $autoLabelColumns = config('laravel-missing-translations.filament.auto_label_columns', []);
 
@@ -114,12 +129,15 @@ class LaravelMissingTranslations
 
         if (! empty($allAutoComponents)) {
             $allNames = array_map(fn ($item) => preg_quote($item[0], '/'), $allAutoComponents);
-            $pattern = '/(?:'.implode('|', $allNames).')::make\s*\(\s*([\'"])([A-Za-z_][A-Za-z0-9_.]*)\1\s*\)/';
+
+            // Note: we keep the field-name pattern strict (identifier-like, no escapes),
+            // so a simpler quoted capture is fine here.
+            $pattern = '/(?<![\w\\\\])((?:'.implode('|', $allNames).'))::make\s*\(\s*([\'"])([A-Za-z_][A-Za-z0-9_.]*)\2\s*\)/';
 
             if (preg_match_all($pattern, $content, $matches, PREG_OFFSET_CAPTURE)) {
                 foreach ($matches[0] as $i => $fullMatch) {
-                    $componentName = preg_replace('/::make.*/', '', $fullMatch[0]);
-                    $fieldName = $matches[2][$i][0];
+                    $componentName = $matches[1][$i][0];
+                    $fieldName = $matches[3][$i][0];
                     $startOffset = $fullMatch[1] + strlen($fullMatch[0]);
                     $endOffset = isset($matches[0][$i + 1])
                         ? $matches[0][$i + 1][1]
@@ -127,11 +145,12 @@ class LaravelMissingTranslations
 
                     $chain = substr($content, $startOffset, $endOffset - $startOffset);
 
+                    // Skip if developer already provided a label.
                     if (preg_match('/->\s*(?:label|translateLabel)\s*\(/', $chain)) {
                         continue;
                     }
 
-                    $isColumn = in_array($componentName, $autoLabelColumns);
+                    $isColumn = in_array($componentName, $autoLabelColumns, true);
                     $keys[] = $isColumn
                         ? $this->humanizeColumnName($fieldName)
                         : $this->humanizeFieldName($fieldName);
@@ -149,7 +168,7 @@ class LaravelMissingTranslations
         }
 
         $name = preg_replace('/(?<=[a-z])(?=[A-Z])/', '-', $name);
-        $name = preg_replace('/[_-]+/', ' ', $name);
+        $name = preg_replace('/[_\-]+/', ' ', $name);
         $name = preg_replace('/\s+/', ' ', trim($name));
 
         return ucfirst(strtolower($name));
@@ -167,7 +186,7 @@ class LaravelMissingTranslations
         }
 
         $name = preg_replace('/(?<=[a-z])(?=[A-Z])/', '-', $name);
-        $name = preg_replace('/[_-]+/', ' ', $name);
+        $name = preg_replace('/[_\-]+/', ' ', $name);
         $name = preg_replace('/\s+/', ' ', trim($name));
 
         return ucfirst(strtolower($name));
@@ -204,7 +223,7 @@ class LaravelMissingTranslations
 
             $excluded = false;
             foreach ($excludePatterns as $pattern) {
-                if (preg_match($pattern, $key)) {
+                if (@preg_match($pattern, $key)) {
                     $excluded = true;
                     break;
                 }
